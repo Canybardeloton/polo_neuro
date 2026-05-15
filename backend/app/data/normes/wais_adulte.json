@@ -1,0 +1,15 @@
+{
+  "test_name": "WAIS",
+  "age_group": "adulte",
+  "category": "cognition",
+  "description": "Échelle d'intelligence de Wechsler pour adultes - exemples de fourchettes",
+  "score_interpretation": [
+    { "min_standard": 0, "max_standard": 69, "label": "Très faible" },
+    { "min_standard": 70, "max_standard": 79, "label": "Faible" },
+    { "min_standard": 80, "max_standard": 89, "label": "Faible moyenne" },
+    { "min_standard": 90, "max_standard": 109, "label": "Moyenne" },
+    { "min_standard": 110, "max_standard": 119, "label": "Moyenne supérieure" },
+    { "min_standard": 120, "max_standard": 129, "label": "Supérieur" },
+    { "min_standard": 130, "max_standard": 200, "label": "Très supérieur" }
+  ]
+}

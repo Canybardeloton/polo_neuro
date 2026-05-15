@@ -1,0 +1,13 @@
+{
+  "test_name": "NEPSY",
+  "age_group": "enfant",
+  "category": "neuropsychologie développementale",
+  "description": "Batterie NEPSY - exemples de fourchettes pour enfants",
+  "score_interpretation": [
+    { "min_standard": 0, "max_standard": 69, "label": "Déficit" },
+    { "min_standard": 70, "max_standard": 84, "label": "Faible" },
+    { "min_standard": 85, "max_standard": 115, "label": "Dans la norme" },
+    { "min_standard": 116, "max_standard": 130, "label": "Supérieur" },
+    { "min_standard": 131, "max_standard": 200, "label": "Très supérieur" }
+  ]
+}
