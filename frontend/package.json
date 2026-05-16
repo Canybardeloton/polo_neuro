@@ -10,6 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@blocknote/core": "^0.38.0",
+    "@blocknote/mantine": "^0.38.0",
+    "@blocknote/react": "^0.38.0",
+    "@mantine/core": "^7.17.8",
+    "@mantine/hooks": "^7.17.8",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

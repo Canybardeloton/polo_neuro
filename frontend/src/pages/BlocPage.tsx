@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { generateSection, type ScoreEntry } from "@/lib/api";
 import {
   CATALOG,
@@ -6,6 +6,7 @@ import {
   QUALIFICATIONS,
   type TestCatalog,
 } from "@/data/neuropsyCatalog";
+import { BlockEditor } from "@/components/editor/BlockEditor";
 
 type DomaineId = (typeof DOMAINES)[number]["id"];
 
@@ -29,9 +30,11 @@ export function BlocPage() {
   const [scores, setScores] = useState<Record<string, ScoreRow>>({});
   const [observations, setObservations] = useState("");
   const [output, setOutput] = useState("");
+  const [generationCount, setGenerationCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
+  const getEditorTextRef = useRef<() => string>(() => "");
 
   const compatibleTests = CATALOG.filter((t) =>
     t.domaines.includes(domaine) &&
@@ -93,6 +96,7 @@ export function BlocPage() {
         tests_utilises: selectedTests,
       });
       setOutput(res.texte_genere);
+      setGenerationCount((n) => n + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -101,8 +105,9 @@ export function BlocPage() {
   }
 
   async function handleCopy() {
-    if (!output) return;
-    await navigator.clipboard.writeText(output);
+    const text = getEditorTextRef.current();
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -420,15 +425,21 @@ export function BlocPage() {
         </div>
 
         <div className="flex-1 min-h-0 p-6">
-          <textarea
-            value={output}
-            onChange={(e) => setOutput(e.target.value)}
-            disabled={loading}
-            placeholder={
-              "Le bloc clinique apparaîtra ici.\n\nVous pouvez l'éditer directement avant de l'intégrer dans votre rapport."
-            }
-            className="w-full h-full border border-gray-200 rounded-lg p-5 text-sm bg-white disabled:bg-gray-50 disabled:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed placeholder:text-gray-400"
-          />
+          {output ? (
+            <BlockEditor
+              key={generationCount}
+              generatedText={output}
+              onCopy={(fn) => { getEditorTextRef.current = fn; }}
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center border border-dashed border-gray-200 rounded-lg bg-white">
+              <p className="text-sm text-gray-400 text-center leading-relaxed px-8">
+                {loading
+                  ? "Génération en cours…"
+                  : "Le bloc clinique apparaîtra ici.\nVous pourrez l'éditer directement avant de l'intégrer dans votre rapport."}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
