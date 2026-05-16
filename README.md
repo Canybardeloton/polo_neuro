@@ -1,17 +1,24 @@
-# Bilan Neuropsycho — MVP
+# polo_neuro
 
-Application web pour générer des bilans neuropsychologiques à partir de notes brutes et cotations, avec aide à la rédaction par LLM.
+Outil d'aide à la rédaction de bilans neuropsychologiques. Le praticien saisit les scores cotés et ses observations de séance ; l'IA génère un bloc clinique structuré, éditable avant copie dans le rapport.
+
+## Principes non négociables
+
+- **Aucune donnée patient n'est envoyée au LLM** — seuls les scores numériques et observations partent à l'API Mistral.
+- **L'IA ne génère aucun chiffre qu'elle n'a pas reçu.** Zéro inférence de score.
+- **Toute affirmation clinique est modalisée** : "semble", "suggère", "est en faveur de". Le prompt système l'impose.
+- **Tout reste local** — pas de base de données, pas de serveur tiers, pas de stockage patient.
 
 ## Stack
 
-- **Backend** : FastAPI, SQLite, SQLAlchemy, OpenAI (LLM)
-- **Frontend** : React (TypeScript), Vite, Shadcn UI
+- **Backend** : FastAPI · Python 3.9 · mistralai SDK
+- **Frontend** : React · TypeScript · Vite · Tailwind CSS
 
 ## Prérequis
 
 - Python 3.9+
 - Node.js 18+
-- Clé API OpenAI (pour la génération anamnèse / conclusions)
+- Clé API Mistral ([console.mistral.ai](https://console.mistral.ai))
 
 ## Installation
 
@@ -19,9 +26,16 @@ Application web pour générer des bilans neuropsychologiques à partir de notes
 
 ```bash
 cd backend
+python -m venv .venv
+source .venv/bin/activate   # Windows : .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env
-# Éditer .env et renseigner OPENAI_API_KEY
+```
+
+Créer un fichier `backend/.env` :
+
+```env
+MISTRAL_API_KEY=sk-...
+LLM_MODEL=mistral-small-latest
 ```
 
 ### Frontend
@@ -33,70 +47,92 @@ npm install
 
 ## Lancement
 
-### 1. Démarrer l’API
-
-Depuis la racine du projet :
-
 ```bash
+# Terminal 1 — API
 cd backend
-uvicorn app.main:app --reload
-```
+.venv/bin/uvicorn app.main:app --reload
+# → http://localhost:8000  |  docs : http://localhost:8000/docs
 
-L’API est disponible sur `http://localhost:8000`. Docs : `http://localhost:8000/docs`.
-
-### 2. Démarrer le frontend
-
-Dans un autre terminal :
-
-```bash
+# Terminal 2 — UI
 cd frontend
 npm run dev
+# → http://localhost:5173
 ```
-
-Ouvrir `http://localhost:5173`.
-
-### Variables d’environnement (backend)
-
-| Variable         | Description                          | Défaut              |
-|-----------------|--------------------------------------|---------------------|
-| `DATABASE_URL`  | URL SQLite                           | `sqlite:///./app/data/bilan.db` |
-| `OPENAI_API_KEY`| Clé API OpenAI                       | — (obligatoire pour LLM) |
-| `LLM_MODEL`     | Modèle utilisé (ex. gpt-4o-mini)     | `gpt-4o-mini`       |
-
-Le fichier `.env` doit se trouver dans le dossier `backend/`.
 
 ## Utilisation
 
-1. **Patients** : créer des patients (nom, prénom, date de naissance, tranche d’âge).
-2. **Bilans** : pour chaque patient, créer un bilan et renseigner pathologie / motif.
-3. **Anamnèse** : saisir les notes brutes, puis cliquer sur « Générer anamnèse (LLM) » pour obtenir un paragraphe structuré (éditable).
-4. **Tests & cotations** : ajouter des tests (ex. WAIS, NEPSY selon l’âge), renseigner scores brut et standard ; l’interprétation peut être remplie automatiquement si des normes sont définies.
-5. **Conclusions** : rédiger ou générer avec « Générer conclusions (LLM) » à partir des tests et de l’anamnèse.
-6. **Aperçu** : consulter le bilan complet avant export (PDF à prévoir ultérieurement).
+1. **Choisir un domaine** parmi : Efficience intellectuelle · Fonctions attentionnelles · Fonctions exécutives · Mémoire de travail · Questionnaires comportementaux · Synthèse.
+2. **Sélectionner la population** (adulte / adolescent / enfant) — filtre les tests compatibles.
+3. **Activer les tests utilisés** (ex. WAIS-IV, TAP) — la grille de scores correspondante apparaît.
+4. **Saisir les scores cotés** : percentile, note standard et/ou qualification pour chaque sous-test.
+5. **Ajouter des observations** de séance (comportement, stratégies, fatigabilité…).
+6. **Générer** — le bloc clinique apparaît à droite, directement éditable.
+7. **Copier** dans le rapport.
+
+### Exemple — WAIS-IV / Efficience intellectuelle
+
+| Sous-test | NS  | Qualification      |
+| --------- | --- | ------------------ |
+| IVC       | 105 | Moyenne            |
+| IVS       | 82  | Fragile / Limite   |
+| IMT       | 74  | Inférieur          |
+| IVT       | 68  | Très inférieur     |
+| QIT       | 85  | Moyenne inférieure |
+
+Observations : *"Ralentissement notable sur les épreuves chronométrées, stratégies verbales spontanées pour compenser les difficultés visuospatiales."*
+
+→ Le modèle génère un paragraphe mentionnant l'hétérogénéité du profil (IVC 105 vs IVT 68) sans jamais inférer de diagnostic.
+
+## Tests supportés
+
+| Test                | Population          | Domaines                                        |
+| ------------------- | ------------------- | ----------------------------------------------- |
+| WAIS-IV             | Adulte              | QI, Attention, Mémoire de travail               |
+| WISC-V              | Enfant, Adolescent  | QI, Mémoire de travail                          |
+| TAP 2.3             | Adulte, Adolescent  | Attention, Fonctions exec., Mémoire de travail  |
+| NEPSY-II            | Enfant, Adolescent  | Attention, Fonctions exécutives                 |
+| D2-R                | Adulte, Adolescent  | Attention                                       |
+| BRIEF-A             | Adulte              | Questionnaires                                  |
+| Échelles Brown EF/A | Enfant, Adolescent  | Questionnaires                                  |
+| RCMAS               | Enfant              | Questionnaires                                  |
+
+## Variables d'environnement
+
+| Variable          | Description     | Défaut                 |
+| ----------------- | --------------- | ---------------------- |
+| `MISTRAL_API_KEY` | Clé API Mistral | — (obligatoire)        |
+| `LLM_MODEL`       | Modèle Mistral  | `mistral-small-latest` |
 
 ## Structure du projet
 
 ```
-Polo/
+polo_neuro/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py
-│   │   ├── config.py, database.py
-│   │   ├── models/      # Patient, Bilan, Test
-│   │   ├── schemas/
-│   │   ├── routers/     # patients, bilans, llm, normes
-│   │   ├── services/    # cotation, llm
-│   │   └── data/normes/ # JSON de normes par test/âge
+│   │   ├── main.py              # FastAPI + CORS
+│   │   ├── config.py            # Settings (pydantic-settings)
+│   │   ├── routers/
+│   │   │   └── generate.py      # POST /generate
+│   │   └── services/
+│   │       ├── llm.py           # Client Mistral, temperature=0.3
+│   │       └── prompts.py       # 6 prompts par domaine cognitif
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── components/ui/  # Shadcn
-│   │   ├── lib/api.ts
+│   │   ├── data/
+│   │   │   ├── neuropsyTests.ts    # Liste de tests (existant)
+│   │   │   └── neuropsyCatalog.ts  # Catalogue structuré (subtests, mesures)
+│   │   ├── lib/
+│   │   │   └── api.ts           # generateSection()
 │   │   └── pages/
+│   │       └── BlocPage.tsx     # Page principale
 │   └── package.json
 └── README.md
 ```
 
-## Données de santé / RGPD
+## Sécurité et RGPD
 
-Les données restent stockées localement (SQLite). Les appels LLM envoient uniquement le texte saisi vers l’API OpenAI ; ne pas logger de données de santé côté fournisseur et respecter les bonnes pratiques RGPD pour un usage professionnel.
+- La clé API Mistral reste dans `backend/.env`, jamais en base ni dans le code.
+- Seuls les **scores numériques** et les **observations textuelles** saisies par le praticien partent vers l'API Mistral — aucun nom, prénom ou date de naissance.
+- Aucune donnée n'est persistée côté serveur : l'application est sans état.
+- Usage professionnel : le praticien reste responsable de tout texte généré avant de l'intégrer dans un rapport clinique.

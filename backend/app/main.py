@@ -5,8 +5,8 @@ from app.routers import generate
 
 app = FastAPI(
     title="Bilan Neuropsycho API",
-    description="Génération de blocs de compte rendu neuropsychologique à partir d'un test et de notes brutes.",
-    version="0.2.0",
+    description="Génération de blocs de bilan neuropsychologique via IA.",
+    version="0.3.0",
 )
 
 app.add_middleware(
